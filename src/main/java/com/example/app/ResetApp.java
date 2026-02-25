@@ -16,16 +16,8 @@ public class ResetApp {
 
     public static void checkReset(JsonService jsoncontroller){    
         jsonController = jsoncontroller;
-        final File [] mandatory_files = {
-            new File("src/main/medialab"),
-            new File("src/main/medialab/JsonFiles"),
-            new File("src/main/medialab/TextFiles"),
-            new File("src/main/medialab/JsonFiles/passkey.json"),
-            new File("src/main/medialab/JsonFiles/users.json"),
-        };
-
         boolean init_flag = false;
-        for(File f : mandatory_files){
+        for(File f : Utils.MANDATORY_FILES){
             if(!f.exists()){
                 init_flag = true;
             } 
@@ -36,7 +28,7 @@ public class ResetApp {
         */
 
         if(init_flag){
-            createAppFiles(mandatory_files);
+            createAppFiles(Utils.MANDATORY_FILES);
         }
     }
 
@@ -71,10 +63,12 @@ public class ResetApp {
         try(
             FileWriter passkeyfile = new FileWriter(Utils.PASSKEY_JSON_FILE);
             FileWriter usersfile= new FileWriter(Utils.USERS_JSON_FILE);
+            FileWriter categoriesfile = new FileWriter(Utils.CATEGORIES_JSON_FILE);
         )
         {
             jsonController.JsonInitFile(admins , passkeyfile, "username","password","user_id");
             jsonController.JsonInitFile(admins, usersfile, "user_id","name","username","role");
+            jsonController.JsonInitFile(categoriesfile); //creates json file with an empty json folder
         } catch (Exception e){
             throw e;
         }

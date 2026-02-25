@@ -11,6 +11,7 @@ public class Main {
         JsonService jsoncontroller = new JsonService();
         
         ResetApp.checkReset(jsoncontroller);  //check if app needs a reset 
+        /* 
         try{
             User admin = jsoncontroller.JsonSearchUseronId(3);
             System.out.println(admin.getName());
@@ -19,6 +20,6 @@ public class Main {
         } catch(Exception e){
             e.printStackTrace();
         }
-        
+        */
     }
 }

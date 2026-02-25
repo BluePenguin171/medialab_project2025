@@ -1,5 +1,1 @@
-[
-    {"user_id":1,"name":"Bob Adminakis","username":"medialab","role":"ADMIN", "categories" : ["skata1","gamiese2"]},
-    {"user_id":2,"name":"Bob Adminakis2","username":"medialab2","role":"ADMIN", "categories" : ["skata3","gamiese4"]},
-    {"user_id":3,"name":"Bob Adminakis3","username":"medialab2","role":"USER", "categories" : ["skata3","gamiese4"]}
-]
+[{"user_id":1,"name":"Bob Adminakis","username":"medialab","role":"ADMIN"}]
