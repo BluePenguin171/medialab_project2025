@@ -1,5 +1,8 @@
 /target/
 
+#User data
+/src/main/medialab/  
+
 # IDE files
 *.iml
 .idea/
