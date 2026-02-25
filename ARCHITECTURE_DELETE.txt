@@ -1,0 +1,15 @@
+com.example.app
+├── MainApp.java
+├── navigation
+│   └── ScreenManager.java
+├── controller
+│   ├── HomeController.java
+│   ├── SettingsController.java
+│   └── AboutController.java
+├── model
+│   └── User.java
+├── service
+│   ├── JsonService.java
+│   └── FileService.java
+└── util
+    └── Constants.java
