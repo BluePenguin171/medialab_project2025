@@ -2,17 +2,21 @@ package com.example.app;
 
 import java.io.File;
 import java.io.FileWriter;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
 
-import javax.json.Json;
-import javax.json.JsonArray;
-import javax.json.JsonObject;
-import javax.json.JsonWriter;
+import com.example.app.models.Admin;
+import com.example.app.services.JsonService;
 
 public class ResetApp {
+    static private JsonService jsonController; 
+    
     private ResetApp(){} 
 
-    public static void checkReset(){    
-        File [] mandatory_files = {
+    public static void checkReset(JsonService jsoncontroller){    
+        jsonController = jsoncontroller;
+        final File [] mandatory_files = {
             new File("src/main/medialab"),
             new File("src/main/medialab/JsonFiles"),
             new File("src/main/medialab/TextFiles"),
@@ -45,11 +49,9 @@ public class ResetApp {
                 if(!files[i].exists() && !files[i].mkdir()) throw new Exception ("Mandatory folders couldn't be created");
             }
             
-            System.out.println("Creating passkey.json...");
-            createInitialPasskeyFile();
-            
-            System.out.println("Creating users.json...");
-            createInitialUsersFile();
+            System.out.println("Creating json files...");
+            createInitialJsonFiles();
+        
             
             System.out.println("++++++Initiallization has been complete!++++++");
         } catch (Exception e){
@@ -59,37 +61,20 @@ public class ResetApp {
         }
     }
 
-    static private void createInitialPasskeyFile() throws Exception{
-         JsonObject admin_passkey = Json.createObjectBuilder()
-        .add("username",Utils.DEFAULT_ADMIN_USERNAME)
-        .add("password",Utils.DEFAULT_ADMIN_PASSWORD)
-        .add("user_index",1)
-        .build();
+    static private void createInitialJsonFiles() throws Exception{
+        Admin admin = new Admin(Utils.DEFAULT_ADMIN_FIRST_NAME,Utils.DEFAULT_ADMIN_LAST_NAME,Utils.DEFAULT_ADMIN_USERNAME,Utils.DEFAULT_ADMIN_PASSWORD,1);
 
-        JsonArray array_passkey = Json.createArrayBuilder().add(admin_passkey).build();
+        List<HashMap<String, Object>> admins = new ArrayList<>();
+        admins.add(admin.toHashMap());
 
         //writing the Json Object to the File
         try(
-            FileWriter passkeyfile = new FileWriter("src/main/medialab/JsonFiles/passkey.json");
-            JsonWriter passkeywriter = Json.createWriter(passkeyfile);
+            FileWriter passkeyfile = new FileWriter(Utils.PASSKEY_JSON_FILE);
+            FileWriter usersfile= new FileWriter(Utils.USERS_JSON_FILE);
         )
         {
-            passkeywriter.writeArray(array_passkey);
-        } catch (Exception e){
-            throw e;
-        }
-    }
-
-    static private void createInitialUsersFile() throws Exception{
-        JsonArray array_users = Json.createArrayBuilder().build();
-
-        //writing the Json Object to the File
-        try(
-            FileWriter passkeyfile = new FileWriter("src/main/medialab/JsonFiles/users.json");
-            JsonWriter passkeywriter = Json.createWriter(passkeyfile);
-        )
-        {
-            passkeywriter.writeArray(array_users);
+            jsonController.JsonInitFile(admins , passkeyfile, "username","password","user_id");
+            jsonController.JsonInitFile(admins, usersfile, "user_id","name","username","role");
         } catch (Exception e){
             throw e;
         }
