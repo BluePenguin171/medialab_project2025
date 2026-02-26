@@ -20,18 +20,18 @@ public class App extends Application {
     @Override
     public void start(Stage primaryStage) {
         this.stage = primaryStage;
-        stage.setTitle("File Managment System");
+        stage.setTitle("MediaLab Documents");
 
 
         ResetApp.checkReset(jsoncontroller); 
-        
-        login_screen = new LoginForm(this);
+        Utils.initUtils(jsoncontroller);
 
         revealLoginForm();
     }
 
 
     public void revealLoginForm(){
+        login_screen = new LoginForm(this);
         Scene scene = new Scene(login_screen.getScreen());
         stage.setScene(scene);
         
@@ -39,8 +39,8 @@ public class App extends Application {
     }
 
     public void revealMainScreen(){
-        main_screen = new MainScreen(this);
-        Scene scene = new Scene(main_screen.getScreen());
+        main_screen = new MainScreen(this,active_user);
+        Scene scene = new Scene(main_screen.getScreen(),850,600);
         stage.setScene(scene);
         
         stage.show();

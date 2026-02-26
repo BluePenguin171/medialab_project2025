@@ -1,7 +1,6 @@
 package com.example.app.models;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 
@@ -38,24 +37,25 @@ public class User{
     protected ArrayList<String>  Categories;  
     protected ROLES role; 
     protected int id;
+    protected ArrayList<String> newCategories = new ArrayList<String>();
     //TODO :  Watchlist ?     
 
-    public User(String first, String last, String username, String password, int id, String [] Categories){
+    public User(String first, String last, String username, String password, int id, ArrayList<String> Categories){
         this.name = new Name(first,last); 
         this.username = username;
         this.password = password;
         this.role = ROLES.USER;
         this.id = id;
-        this.Categories = new ArrayList<String>(Arrays.asList(Categories)); //Convert Categories to List  
+        this.Categories = new ArrayList<String>(Categories); //Copy Categories list  
     }
 
-    public User(String name, String username, int id, String [] Categories){
+    public User(String name, String username, int id, ArrayList<String> Categories){
         this.name = new Name(name); 
         this.username = username;
         this.password = null;
         this.role = ROLES.USER;
         this.id = id;
-        this.Categories = new ArrayList<String>(Arrays.asList(Categories)); //Convert Categories to List  
+        this.Categories = new ArrayList<String>(Categories); //Copy Categories list  
     }
 
     //getters 
@@ -75,9 +75,25 @@ public class User{
         return role.getDescriptor(); 
     }
 
+    public String getRole(){
+        String str = role.toString();
+        return str.substring(0, 1).toUpperCase() + str.substring(1).toLowerCase(); //convert for UI
+    }
+
     public int getId(){
         return id;
     }
+
+
+    public ArrayList<String> getNewCategories(){
+        return newCategories;
+    }
+
+    public void addNewCategory(String cat){
+        newCategories.add(cat);
+    }
+
+
 
     //Methods
     public void removeCategory(String cat){

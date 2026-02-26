@@ -59,6 +59,10 @@ public class LoginForm {
 
         VBox.setMargin(grid, new Insets(5, 0, 0, 0));
 
+        //TODO : TESTING PURPOSES! DELETE THIS
+        username.setText("medialab");
+        password.setText("medialab2025");
+
         new LoginController(app,this); 
     }
 

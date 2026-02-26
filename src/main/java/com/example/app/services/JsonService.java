@@ -4,6 +4,7 @@ package com.example.app.services;
 import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -39,11 +40,13 @@ public class JsonService {
                 
                 if(value instanceof String) builder.add(key,(String) value);
                 else if(value instanceof Integer) builder.add(key,(Integer) value);
-                else if (value instanceof String[]) {
-                    String[] arr = (String[]) value;
+                else if (value instanceof ArrayList) {
+                    ArrayList<?> list = (ArrayList<?>) value;
                     JsonArrayBuilder arrayBuilder = Json.createArrayBuilder();
-                    for (String s : arr) {
-                        arrayBuilder.add(s);
+                    for (Object item : list) {
+                        if (item instanceof String) {
+                            arrayBuilder.add((String) item);
+                        }
                     }
                     builder.add(key, arrayBuilder);
                 }
@@ -64,7 +67,7 @@ public class JsonService {
     }
 
     public void JsonInitFile(FileWriter file) throws Exception{
-        JsonObject emptyData = Json.createObjectBuilder().add("all_categories",Json.createArrayBuilder().build()).build();
+        JsonObject emptyData = Json.createObjectBuilder().add("all_categories",Json.createArrayBuilder().add("All").build()).build();
         try(
             JsonWriter jsonfile = createJsonFile(file);
         ){
@@ -87,7 +90,7 @@ public class JsonService {
             JsonArray jsonArray = jsonReader.readArray();
             
             //iterate through jsonArray to find requested user
-            String [] categories;
+            ArrayList<String> categories;
             int temp_id;
             for(int i =0; i< jsonArray.size(); i++){
                 JsonObject j = jsonArray.getJsonObject(i);
@@ -96,7 +99,7 @@ public class JsonService {
                 String role = j.getString("role");
                 //fetch categories
                 if(role.equals("ADMIN")){
-                    categories = fetchAllCategories();
+                    categories = new ArrayList<>(Utils.allCategories);
                 }
                 else{
                     categories = convertJsonArraytoString(j.getJsonArray("categories"));
@@ -143,7 +146,7 @@ public class JsonService {
     }
     }
 
-    private String [] fetchAllCategories() throws Exception{
+    public ArrayList<String> fetchAllCategories() throws Exception{
         File jsonFile = new File(Utils.CATEGORIES_JSON_FILE);
 
         try (FileReader fileReader = new FileReader(jsonFile);
@@ -151,8 +154,7 @@ public class JsonService {
 
             JsonObject jsonObj = jsonReader.readObject();
 
-            // Convert JsonArray to String[]
-            String[] categories = convertJsonArraytoString(jsonObj.getJsonArray("all_categories"));
+            ArrayList<String> categories = convertJsonArraytoString(jsonObj.getJsonArray("all_categories"));
             return categories;
 
         } catch(Exception e){
@@ -161,12 +163,13 @@ public class JsonService {
 
     }
 
-    private String [] convertJsonArraytoString(JsonArray json){
-        return json
-            .getValuesAs(JsonString.class) // get list of JsonString
+    private ArrayList<String> convertJsonArraytoString(JsonArray json){
+        ArrayList<String> result = new ArrayList<>();
+        json.getValuesAs(JsonString.class) // get list of JsonString
             .stream()
             .map(JsonString::getString)    // extract the string value
-            .toArray(String[]::new);       // collect into String[]
+            .forEach(result::add);          // add to ArrayList
+        return result;
     }
 }
 
