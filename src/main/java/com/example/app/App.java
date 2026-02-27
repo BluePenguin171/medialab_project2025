@@ -27,6 +27,7 @@ public class App extends Application {
         Utils.initUtils(jsoncontroller);
 
         revealLoginForm();
+        //closingEvent();
     }
 
 
@@ -45,7 +46,34 @@ public class App extends Application {
         
         stage.show();
     }
+    /*
+    public void closingEvent(){
+        stage.setOnCloseRequest(event -> {
+            if(active_user != null){
+                try{
+                    if(active_user instanceof Admin){ 
+                        Admin admin = (Admin) active_user;
+                        for(User newUser : admin.getNewUsers()){
+                            Utils.allUsers.add(newUser);   
+                        }
+                        if(admin.getNewUsers().size() > 0){
+                            jsoncontroller.saveAllUsers(Utils.allUsers);
+                        }
 
+                        if(admin.getNewCategories()){
+                            jsoncontroller.saveAllCategories(Utils.allCategories);
+                        }
+                    System.out.println("App closed, all changes saved.");
+                    } else {
+                        System.out.println("App closed, no changes to save.");
+                    }
+                } catch (Exception e){
+                    System.out.println("Error saving users on exit: " + e.getMessage());
+                }
+            }
+        });
+    }
+    */
     public JsonService getJsonController(){
         return jsoncontroller;
     }

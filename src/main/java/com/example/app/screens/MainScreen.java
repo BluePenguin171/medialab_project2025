@@ -1,5 +1,7 @@
 package com.example.app.screens;
 
+
+
 import com.example.app.App;
 import com.example.app.controllers.MainController;
 import com.example.app.models.User;
@@ -10,6 +12,8 @@ import javafx.geometry.Pos;
 import javafx.scene.control.Button;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
+import javafx.scene.control.ListView;
+import javafx.scene.control.SelectionMode;
 import javafx.scene.control.TextField;
 import javafx.scene.image.ImageView;
 import javafx.scene.image.Image;
@@ -24,7 +28,7 @@ import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
-import javafx.scene.text.Text;
+
 
 public class MainScreen {
     //Main Screen fields
@@ -73,6 +77,7 @@ public class MainScreen {
     private TextField lastName = new TextField();
     private TextField username = new TextField();
     private TextField password = new TextField();
+    private ListView<String> categoriesList;
     private Button submit = new Button("submit");
 
 
@@ -188,7 +193,15 @@ public class MainScreen {
         grid.add(username,1,3);
         grid.add(new Label("password:"),0,4);
         grid.add(password,1,4);
-        grid.add(submit,1,5);
+        categoriesList = new ListView<>();
+        for(String category : user.getCategories()){
+            if(!category.equals("All")) categoriesList.getItems().add(category);
+        }
+        categoriesList.setPrefHeight(100);
+        categoriesList.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
+        
+        grid.add(categoriesList,1,5);
+        grid.add(submit,1,6 );
 
         GridPane.setHalignment(submit,HPos.RIGHT);
 
@@ -248,6 +261,10 @@ public class MainScreen {
 
     public Button getSubmit() {
         return submit;
+    }
+
+    public ListView<String> getCategoriesList() {
+        return categoriesList;
     }
 
     public ComboBox<String> getCategories() {

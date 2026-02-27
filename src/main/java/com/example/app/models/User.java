@@ -1,8 +1,11 @@
 package com.example.app.models;
 
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+
+import com.example.app.Utils;
 
 public class User{
     /* User SubClass for Name  */
@@ -31,31 +34,42 @@ public class User{
         }
     }
 
-    protected Name name ;
-    protected String username; 
-    protected String password; 
-    protected ArrayList<String>  Categories;  
-    protected ROLES role; 
-    protected int id;
-    protected ArrayList<String> newCategories = new ArrayList<String>();
-    //TODO :  Watchlist ?     
 
-    public User(String first, String last, String username, String password, int id, ArrayList<String> Categories){
+    protected final Name name ;
+    protected final String username; 
+    protected final String password; 
+    protected final ArrayList<String>  Categories;  
+    protected ROLES role; 
+    protected final int id;
+    protected ArrayList<TextFilePair> watchlist = new ArrayList<>();
+    
+    //constructors
+    public User(String first, String last, String username, String password, int id, ArrayList<String> Categories, ArrayList<TextFilePair> watchlist){
         this.name = new Name(first,last); 
         this.username = username;
         this.password = password;
         this.role = ROLES.USER;
         this.id = id;
+        this.watchlist = watchlist;
+        this.Categories = new ArrayList<String>(Categories);  
+    }
+
+    public User(String name, String username, String password, int id, ArrayList<String> Categories, ArrayList<TextFilePair> watchlist){
+        this.name = new Name(name); 
+        this.username = username;
+        this.password = password;
+        this.role = ROLES.USER;
+        this.id = id;
+        this.watchlist = watchlist;
         this.Categories = new ArrayList<String>(Categories); //Copy Categories list  
     }
 
-    public User(String name, String username, int id, ArrayList<String> Categories){
-        this.name = new Name(name); 
-        this.username = username;
-        this.password = null;
-        this.role = ROLES.USER;
-        this.id = id;
-        this.Categories = new ArrayList<String>(Categories); //Copy Categories list  
+    public User(String first, String last, String username, String password, int id, ArrayList<String> Categories){
+        this(first, last, username, password, id, Categories, new ArrayList<TextFilePair>());
+    }
+
+    public User(String name, String username, String password, int id, ArrayList<String> Categories){
+        this(name, username, password, id, Categories, new ArrayList<TextFilePair>());
     }
 
     //getters 
@@ -84,32 +98,56 @@ public class User{
         return id;
     }
 
-
-    public ArrayList<String> getNewCategories(){
-        return newCategories;
-    }
-
-    public void addNewCategory(String cat){
-        newCategories.add(cat);
+    public ArrayList<TextFilePair> getWatchlist() {
+        return watchlist;
     }
 
 
 
     //Methods
-    public void removeCategory(String cat){
-        this.Categories.remove(cat); 
+    public void addToWatchlist(int fileId, int version){
+        watchlist.add(new TextFilePair(fileId, version));
     }
 
-    public HashMap<String, Object> toHashMap() {
-        LinkedHashMap<String, Object> map = new LinkedHashMap<>();
-        map.put("user_id", id);
-        map.put("name", this.name.toString());
-        map.put("username", this.username);
-        map.put("password", this.password);
-        map.put("role", this.role.toString());
-        //TODO : map.put("Categories", this.Categories);
-        return map;
+    public void removeFromWatchlist(int fileId){
+        watchlist.removeIf(pair -> pair.fileId == fileId);
     }
 
+    public HashMap<String, Object> toJson(){
+        LinkedHashMap<String, Object> json = new LinkedHashMap<>();
+        json.put("id", this.id);
+        json.put("name", this.name.toString());
+        json.put("username", this.username);
+        json.put("password", this.password);
+        json.put("role", this.role.toString());
+        json.put("categories", this.Categories);
+        ArrayList<HashMap<String, Object>> watchlistJson = new ArrayList<>();
+        for(TextFilePair pair : watchlist){
+            HashMap<String, Object> pairJson = new HashMap<>();
+            pairJson.put("fileId", pair.fileId);
+            pairJson.put("version", pair.version);
+            watchlistJson.add(pairJson);
+        }
+        json.put("watchlist", watchlistJson);
+        return json;
+    }
+
+    static public User createFromJson(HashMap<String, Object> json) throws IllegalArgumentException{
+        int id = (int) json.get("id");
+        String name = (String) json.get("name");
+        String username = (String) json.get("username");
+        String password = (String) json.get("password");
+        String roleStr = (String) json.get("role");
+        ROLES role = ROLES.valueOf(roleStr.toUpperCase());
+        @SuppressWarnings("unchecked")
+        ArrayList<String> categories = (ArrayList<String>) json.get("categories");
+        @SuppressWarnings("unchecked")
+        ArrayList<TextFilePair> watchlist = (ArrayList<TextFilePair>) json.get("watchlist");
+        if(role == ROLES.ADMIN) return new Admin(name, username, password, id, Utils.allCategories, watchlist);
+        else if(role == ROLES.WRITER) return new Writer(name, username, password, id, categories, watchlist);
+        else if(role == ROLES.USER) return new User(name, username, password, id, categories, watchlist);
+
+        throw new IllegalArgumentException("Invalid role in JSON: " + roleStr);
+    }
 
 }

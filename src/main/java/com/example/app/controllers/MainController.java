@@ -1,15 +1,20 @@
 package com.example.app.controllers;
 
+import java.util.ArrayList;
 import java.util.Optional;
 
 import com.example.app.App;
 import com.example.app.Utils;
+import com.example.app.models.Admin;
+import com.example.app.models.User;
 import com.example.app.screens.MainScreen;
 
 import javafx.collections.ObservableList;
 import javafx.scene.control.Alert;
+import javafx.scene.control.ListCell;
 import javafx.scene.control.TextInputDialog;
-import javafx.scene.text.Text;
+import javafx.scene.input.MouseEvent;
+
 
 public class MainController {
     private App app;
@@ -25,9 +30,16 @@ public class MainController {
     private void initController(){
         main.getAddUsers().setOnMouseClicked(
             (e) -> {
+                if(main.getUser().getCategories().size() == 1){ //only "All" category exists
+                    Alert alert = new Alert(Alert.AlertType.INFORMATION);
+                    alert.setTitle("Message");
+                    alert.setHeaderText("Error");
+                    alert.setContentText("Please create a category before adding a user!");
+                    alert.showAndWait();
+                    return;
+                }
                 if(!main.getAddUserActive()){
                     main.setAddUserActive();
-                    System.out.println("Button pressed");
                     main.createUserForm();
                     formLogic();
                 }
@@ -47,25 +59,55 @@ public class MainController {
         main.getUsername().setOnAction((e) -> main.getPassword().requestFocus());
         main.getPassword().setOnAction((e) -> RunFormLogic());
         main.getSubmit().setOnAction((e) -> RunFormLogic());
+        //Custom multiple selection logic for categories list
+        main.getCategoriesList().setCellFactory(lv -> {
+            ListCell<String> cell = new ListCell<>() {
+                @Override
+                protected void updateItem(String item, boolean empty) {
+                    super.updateItem(item, empty);
+                    setText(empty ? null : item);
+                }
+            };
+
+            cell.addEventFilter(MouseEvent.MOUSE_PRESSED, event -> {
+                lv.requestFocus();
+                if (!cell.isEmpty()) {
+                    int index = cell.getIndex();
+                    if (lv.getSelectionModel().getSelectedIndices().contains(index)) {
+                        lv.getSelectionModel().clearSelection(index);
+                    } else {
+                        lv.getSelectionModel().select(index);
+                    }
+                    event.consume();
+                }
+            });
+
+            return cell;
+        });
     }
 
     private void RunFormLogic(){
+
         String first,last,username,password; 
         first = main.getFirstName().getText();
         last = main.getLastName().getText();
         username = main.getUsername().getText();
         password = main.getPassword().getText();
+        ArrayList<String> selectedCategories = new ArrayList<>(main.getCategoriesList().getSelectionModel().getSelectedItems());
         Alert alert = new Alert(Alert.AlertType.INFORMATION);
-        alert.setTitle("Messege");
+        alert.setTitle("Message");
         alert.setHeaderText("Error");
         if(first.equals("")) alert.setContentText("First name is missing!");
         else if(last.equals("")) alert.setContentText("Last name is missing!");
         else if(username.equals("")) alert.setContentText("Username is missing!");
         else if(password.equals("")) alert.setContentText("Password is missing!");
+        else if(selectedCategories.isEmpty()) alert.setContentText("Please select at least one category!");
         else {
            System.out.println("The form is valid");
            main.returnToMainArea();
            main.setAddUserActive();
+           Admin admin = (Admin) main.getUser();
+           admin.addNewUser(new User(first, last, username, password, Utils.generateID(), selectedCategories));
            return;
         }
         alert.showAndWait();
@@ -87,7 +129,9 @@ public class MainController {
                     ObservableList<String> items = main.getCategories().getItems();
                     items.add(items.size() -1 , name); // add to combo box
                     main.getCategories().setValue(name);       // auto-select it
-                    main.getUser().addNewCategory(name);                 // add to user's new categories
+                    Admin admin = (Admin) main.getUser();
+                    admin.setChangedCategoriesFlag();           // inform admin newCategory flag                  
+                    admin.getCategories().add(category);          // add to admin categories list so it can be visible
                     Utils.allCategories.add(name);                     // add to global categories list
                 } else if (exists){
                     Alert alert = new Alert(Alert.AlertType.INFORMATION);
