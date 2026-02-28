@@ -42,6 +42,7 @@ public class User{
     protected ROLES role; 
     protected final int id;
     protected ArrayList<TextFilePair> watchlist = new ArrayList<>();
+    protected boolean watchlistChanged = false;
     
     //constructors
     public User(String first, String last, String username, String password, int id, ArrayList<String> Categories, ArrayList<TextFilePair> watchlist){
@@ -98,18 +99,23 @@ public class User{
         return id;
     }
 
+
     public ArrayList<TextFilePair> getWatchlist() {
         return watchlist;
     }
 
-
+    public boolean watchlistHasChanged(){
+        return watchlistChanged;
+    }
 
     //Methods
     public void addToWatchlist(int fileId, int version){
+        watchlistChanged = true;
         watchlist.add(new TextFilePair(fileId, version));
     }
 
     public void removeFromWatchlist(int fileId){
+        watchlistChanged = true;
         watchlist.removeIf(pair -> pair.fileId == fileId);
     }
 
@@ -131,6 +137,13 @@ public class User{
         }
         json.put("watchlist", watchlistJson);
         return json;
+    }
+
+    public boolean hasTextID(int id){
+        for(TextFilePair p : watchlist){
+            if (p.fileId == id) return true;
+        }
+        return false;
     }
 
     static public User createFromJson(HashMap<String, Object> json) throws IllegalArgumentException{
@@ -158,4 +171,6 @@ public class User{
         }
         return jsonList;
     }
+
+
 }

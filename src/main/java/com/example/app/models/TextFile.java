@@ -1,4 +1,5 @@
 package com.example.app.models;
+import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.time.LocalDate;
@@ -7,6 +8,8 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 
 import com.example.app.Utils;
+
+import javafx.scene.text.Text;
 
 public final class TextFile{
     private int id;
@@ -118,6 +121,7 @@ public final class TextFile{
         json.put("title", this.title);
         json.put("author", this.author);
         json.put("category", this.category);
+        json.put("lastModified",this.lastModified.toString());
         json.put("version", this.version);
         return json;
     }
@@ -130,7 +134,8 @@ public final class TextFile{
         String author = (String) json.get("author");
         String category = (String) json.get("category");
         int version = (int) json.get("version");
-        return new TextFile(id,title, author, category, version);
+        LocalDate lastModified= LocalDate.parse((String) json.get("lastModified"));
+        return new TextFile(id,title, author, category, version, lastModified);
     }
 
     static public ArrayList<HashMap<String, Object>> createToJson(ArrayList<TextFile> files){
@@ -149,6 +154,13 @@ public final class TextFile{
             }
         }
         return filtered;
+    }
+
+    static public void deleteFile(TextFile file){
+        for(int i=1; i<=file.getVersion(); i++){
+            File f = new File(file.getFilePath(i));
+            if(f.exists()) f.delete();
+        }
     }
 }
 

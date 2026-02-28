@@ -108,8 +108,8 @@ public class JsonService{
                     else if (item instanceof Integer) {
                         arrayBuilder.add((Integer) item);
                     }
-                    else if(item instanceof TextFilePair){
-                        TextFilePair pair = (TextFilePair) item;
+                    else if(item instanceof HashMap){
+                        TextFilePair pair = TextFilePair.createFromJson((HashMap<String, Integer>) item);
                         arrayBuilder.add(Json.createArrayBuilder()
                             .add(pair.fileId)
                             .add(pair.version)

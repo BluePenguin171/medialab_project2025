@@ -7,10 +7,15 @@ import java.util.ArrayList;
 import com.example.app.App;
 import com.example.app.Utils;
 import com.example.app.controllers.MainController;
+import com.example.app.controllers.WatchingButtonControllers;
+import com.example.app.controllers.XButtonControllers;
 import com.example.app.models.TextFile;
 import com.example.app.models.User;
 
 import javafx.application.Platform;
+import javafx.beans.property.SimpleStringProperty;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
 import javafx.geometry.HPos;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -24,9 +29,13 @@ import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
 import javafx.scene.control.RadioButton;
 import javafx.scene.control.SelectionMode;
+import javafx.scene.control.TableCell;
+import javafx.scene.control.TableColumn;
+import javafx.scene.control.TableView;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
 import javafx.scene.control.ToggleGroup;
+import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.image.ImageView;
 import javafx.scene.image.Image;
 import javafx.scene.layout.Background;
@@ -40,6 +49,7 @@ import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Text;
+import javafx.util.Callback;
 
 
 public class MainScreen {
@@ -379,53 +389,71 @@ public class MainScreen {
             emptyLabel.setStyle("-fx-text-fill: gray; -fx-font-size: 14px;");
             return emptyLabel;
         }
-        //List View to Display files 
-        HBox header = createFileViewerRow("Title","Author","Category","Last Modified","Version");
-        header.setPadding(new Insets(0,10,0,10));
 
-        ListView<HBox> fileList = new ListView<>();
-        for(TextFile file : TextFile.filterBasedOnCategory(Utils.allTextFiles, user.getCategories())){
-            HBox row = createFileViewerRow(file.getTitle(),file.getAuthor(),file.getCategory(),file.getLastModified(), "ver" + String.valueOf(file.getVersion()));
-            fileList.getItems().add(row);
-        }
 
-        VBox mainScreenFileViewer = new VBox(5);
-        mainScreenFileViewer.getChildren().addAll(header, fileList);
-        mainScreenFileViewer.setAlignment(Pos.TOP_LEFT);
-        VBox.setVgrow(mainScreenFileViewer, Priority.ALWAYS);
+        TableView<TextFile> fileTable = new TableView<>();
+        fileTable.setEditable(false);
+        //fileTable.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY_NEXT_COLUMN);
+        fileTable.setPrefHeight(400);
 
-        return mainScreenFileViewer;
+        fileTable.setSelectionModel(null);
+
+        TableColumn<TextFile, String> titleCol = new TableColumn<>("Title");
+        titleCol.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getTitle()));
+        titleCol.setMinWidth(150);
+
+        TableColumn<TextFile, String> authorCol = new TableColumn<>("Author");
+        authorCol.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getAuthor()));
+        authorCol.setMinWidth(100);
+
+
+        TableColumn<TextFile, String> categoryCol = new TableColumn<>("Category");
+        categoryCol.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getCategory()));
+        categoryCol.setMinWidth(100);
+
+        TableColumn<TextFile, String> modifiedCol = new TableColumn<>("Last Modified");
+        modifiedCol.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getLastModified()));
+        modifiedCol.setMinWidth(100);
+        modifiedCol.setMaxWidth(100);
+        modifiedCol.setStyle("-fx-alignment: CENTER;");
+
+        TableColumn<TextFile, String> versionCol = new TableColumn<>("Version");
+        versionCol.setCellValueFactory(data -> new SimpleStringProperty("ver" + data.getValue().getVersion()));
+        versionCol.setMinWidth(60);
+        versionCol.setMaxWidth(80);
+        versionCol.setStyle("-fx-alignment: CENTER;");
+
+        //Buttons Column
+        TableColumn<TextFile, Void> watchingCol = new TableColumn<>("");
+        watchingCol.setMinWidth(40);
+        watchingCol.setMaxWidth(40);
+        watchingCol.setSortable(false);
+
+        watchingCol.setCellFactory(new WatchingButtonControllers(this));
+
+        TableColumn<TextFile, Void> deleteCol = new TableColumn<>("del");
+        deleteCol.setMinWidth(40);
+        deleteCol.setMaxWidth(40);
+        deleteCol.setSortable(false);
+
+        deleteCol.setCellFactory(new XButtonControllers(this));
+
+
+
+        fileTable.getColumns().addAll(titleCol, authorCol, categoryCol, modifiedCol, versionCol,watchingCol,deleteCol);
+
+
+        ObservableList<TextFile> files = FXCollections.observableArrayList(
+            TextFile.filterBasedOnCategory(Utils.allTextFiles, user.getCategories())
+        );
+        fileTable.setItems(files);
         
 
+
+        return fileTable;
+
     }
 
-    private HBox createFileViewerRow(String title,String author, String category, String lastModified, String version){
-        HBox row = new HBox();
-        ArrayList<Label> labelRow = createFileViewerLabelList(title,author,category,lastModified,version);
-        int N = labelRow.size() - 1;
-        for (int i =0; i<N; i++){
-            Label label = labelRow.get(i);
-            row.getChildren().add(label);
-            Region region = new Region();
-            row.getChildren().add(region);
-            HBox.setHgrow(region, Priority.ALWAYS);
-        }
-        row.getChildren().add(labelRow.get(N)); //Avoid having a region in the end
-        return row;
-    }
-
-    private ArrayList<Label> createFileViewerLabelList(String title, String author, String category, String lastModified, String version){
-        ArrayList<Label> row = new ArrayList<>();
-        row.add(new Label(title));
-        row.add(new Label(author));
-        row.add(new Label(category));
-        row.add(new Label(lastModified));
-        row.add(new Label(version));
-        for(Label label : row){
-            label.setAlignment(Pos.CENTER_LEFT);
-        }
-        return row;
-    }
 
     public Dialog<String> createFileDialog(){
         Dialog<String> dialog = new Dialog<>();

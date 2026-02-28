@@ -58,7 +58,20 @@ public class App extends Application {
         stage.setOnCloseRequest(event -> {
             if(active_user != null){
                 try{
-                    if(active_user instanceof Writer){
+
+                    if(active_user instanceof User && !(active_user instanceof Admin)){    //write Json file when the watchlist of a user has changed
+                        User user = active_user;
+                        if(user.watchlistHasChanged()){
+                            ArrayList<HashMap<String, Object>> jsonUsers = User.createToJson(Utils.allUsers);
+                            FileWriter userFileWriter = new FileWriter(Utils.USERS_JSON_FILE);
+                            FileWriter passkeyFileWriter = new FileWriter(Utils.PASSKEY_JSON_FILE);
+                            jsoncontroller.writeJsonFile(userFileWriter, jsonUsers,"id","name","username","password","role","categories","watchlist");
+                            jsoncontroller.writeJsonFile(passkeyFileWriter, jsonUsers, "username", "password", "id");
+                            userFileWriter.close();
+                            passkeyFileWriter.close();
+                        }
+                    }
+                    if(active_user instanceof Writer){  //write Json file when a writer/admin has create a new file or changed something
                         Writer writer = (Writer) active_user;
                         if(writer.hasNewFile()){
                             ArrayList<HashMap<String, Object>> jsonFiles = TextFile.createToJson(Utils.allTextFiles);
@@ -68,9 +81,9 @@ public class App extends Application {
                         }
                     }
 
-                    if(active_user instanceof Admin){ 
+                    if(active_user instanceof Admin){  //write Json File when admin changes stuff
                         Admin admin = (Admin) active_user;
-                        if(admin.getNewUsersFlag()){
+                        if(admin.getNewUsersFlag() || admin.watchlistHasChanged()){
                             ArrayList<HashMap<String, Object>> jsonUsers = User.createToJson(Utils.allUsers);
                             FileWriter userFileWriter = new FileWriter(Utils.USERS_JSON_FILE);
                             FileWriter passkeyFileWriter = new FileWriter(Utils.PASSKEY_JSON_FILE);

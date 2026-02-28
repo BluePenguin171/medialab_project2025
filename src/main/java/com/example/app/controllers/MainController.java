@@ -80,11 +80,16 @@ public class MainController {
                 if(!main.getActionActiveFlag()){
                     main.setActionActiveFlage();
                     TextFile newFile = createFileDialog();
+                    if(newFile == null) {
+                        main.setActionActiveFlage();
+                        return;
+                    }
                     main.textFileArea(newFile);
                 } 
             }
         );
 
+        //Go Back Button Controller
         main.getGoBack().setOnAction(
             (e) -> {
                 main.setActionActiveFlage();
@@ -96,6 +101,7 @@ public class MainController {
             }
         );
 
+        //Save Button Controller
         main.getSave().setOnAction(
             (e) -> {
                 main.setActionActiveFlage();
