@@ -28,7 +28,7 @@ import com.example.app.models.User;
 
 public class JsonService{
 
-    public void writeJsonFile(FileWriter filepath, List<HashMap<String,Object>> map,String ... fields) throws Exception{
+    public void writeJsonFile(FileWriter filepath, ArrayList<HashMap<String,Object>> map,String ... fields) throws Exception{
         JsonArray jsonData = objectlistToJson(map, fields);
         try(
             JsonWriter jsonfile = Json.createWriter(filepath);

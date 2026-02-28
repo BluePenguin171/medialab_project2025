@@ -13,8 +13,11 @@ import javafx.scene.control.Button;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
+import javafx.scene.control.RadioButton;
 import javafx.scene.control.SelectionMode;
 import javafx.scene.control.TextField;
+import javafx.scene.control.Toggle;
+import javafx.scene.control.ToggleGroup;
 import javafx.scene.image.ImageView;
 import javafx.scene.image.Image;
 import javafx.scene.layout.Background;
@@ -77,6 +80,11 @@ public class MainScreen {
     private TextField lastName = new TextField();
     private TextField username = new TextField();
     private TextField password = new TextField();
+    private final RadioButton adminRole = new RadioButton("Admin");
+    private final RadioButton writerRole = new RadioButton("Writer");
+    private final RadioButton userRole = new RadioButton("User");
+    private ToggleGroup roleGroup = new ToggleGroup();
+
     private ListView<String> categoriesList;
     private Button submit = new Button("submit");
 
@@ -193,6 +201,20 @@ public class MainScreen {
         grid.add(username,1,3);
         grid.add(new Label("password:"),0,4);
         grid.add(password,1,4);
+
+        //radio buttons for roles
+        HBox rolesBox = new HBox(10);
+
+        roleGroup = new ToggleGroup();
+        adminRole.setToggleGroup(roleGroup);
+        writerRole.setToggleGroup(roleGroup);
+        userRole.setToggleGroup(roleGroup);
+        userRole.setSelected(true); 
+
+        rolesBox.getChildren().addAll(userRole, writerRole, adminRole);
+        grid.add(new Label("Role:"),0,5);
+        grid.add(rolesBox,1,5);
+
         categoriesList = new ListView<>();
         for(String category : user.getCategories()){
             if(!category.equals("All")) categoriesList.getItems().add(category);
@@ -200,8 +222,8 @@ public class MainScreen {
         categoriesList.setPrefHeight(100);
         categoriesList.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
         
-        grid.add(categoriesList,1,5);
-        grid.add(submit,1,6 );
+        grid.add(categoriesList,1,6);
+        grid.add(submit,1,7 );
 
         GridPane.setHalignment(submit,HPos.RIGHT);
 
@@ -261,6 +283,10 @@ public class MainScreen {
 
     public Button getSubmit() {
         return submit;
+    }
+
+    public ToggleGroup getRoleGroup() {
+        return roleGroup;
     }
 
     public ListView<String> getCategoriesList() {

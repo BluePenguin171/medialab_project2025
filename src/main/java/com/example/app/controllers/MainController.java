@@ -7,12 +7,15 @@ import com.example.app.App;
 import com.example.app.Utils;
 import com.example.app.models.Admin;
 import com.example.app.models.User;
+import com.example.app.models.Writer;
 import com.example.app.screens.MainScreen;
 
 import javafx.collections.ObservableList;
 import javafx.scene.control.Alert;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.TextInputDialog;
+import javafx.scene.control.Toggle;
+import javafx.scene.control.ToggleButton;
 import javafx.scene.input.MouseEvent;
 
 
@@ -30,7 +33,7 @@ public class MainController {
     private void initController(){
         main.getAddUsers().setOnMouseClicked(
             (e) -> {
-                if(main.getUser().getCategories().size() == 1){ //only "All" category exists
+                if(main.getUser().getCategories().size() == 0){ //only "All" category exists
                     Alert alert = new Alert(Alert.AlertType.INFORMATION);
                     alert.setTitle("Message");
                     alert.setHeaderText("Error");
@@ -88,12 +91,15 @@ public class MainController {
 
     private void RunFormLogic(){
 
-        String first,last,username,password; 
+        String first,last,username,password,role; 
         first = main.getFirstName().getText();
         last = main.getLastName().getText();
         username = main.getUsername().getText();
         password = main.getPassword().getText();
         ArrayList<String> selectedCategories = new ArrayList<>(main.getCategoriesList().getSelectionModel().getSelectedItems());
+        Toggle selectedRole = main.getRoleGroup().getSelectedToggle();
+        ToggleButton selectedButton = (ToggleButton) selectedRole;
+        role = selectedButton.getText();
         Alert alert = new Alert(Alert.AlertType.INFORMATION);
         alert.setTitle("Message");
         alert.setHeaderText("Error");
@@ -101,13 +107,24 @@ public class MainController {
         else if(last.equals("")) alert.setContentText("Last name is missing!");
         else if(username.equals("")) alert.setContentText("Username is missing!");
         else if(password.equals("")) alert.setContentText("Password is missing!");
-        else if(selectedCategories.isEmpty()) alert.setContentText("Please select at least one category!");
+        else if(selectedCategories.isEmpty() && !role.equals("Admin")) alert.setContentText("Please select at least one category!");
         else {
            System.out.println("The form is valid");
            main.returnToMainArea();
            main.setAddUserActive();
            Admin admin = (Admin) main.getUser();
-           admin.addNewUser(new User(first, last, username, password, Utils.generateID(), selectedCategories));
+           if(role.equals("Admin")) Utils.addNewUser(new Admin(first, last, username, password, Utils.generateID(), selectedCategories));
+           else if(role.equals("Writer")) Utils.addNewUser(new Writer(first,last, username, password, Utils.generateID(), selectedCategories));
+           else Utils.addNewUser(new User(first, last, username, password, Utils.generateID(), selectedCategories)); 
+           
+           admin.setNewUsersFlag();
+           //clear form fields
+           main.getFirstName().setText("");
+           main.getLastName().setText("");
+           main.getUsername().setText("");
+           main.getPassword().setText("");
+           main.getCategoriesList().getSelectionModel().clearSelection();
+           
            return;
         }
         alert.showAndWait();

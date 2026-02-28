@@ -65,6 +65,7 @@ public class Utils {
     }
 
     static private ArrayList<String> createFromJson(HashMap<String, Object> json){
+        @SuppressWarnings("unchecked")
         ArrayList<String> categories = (ArrayList<String>) json.get("categories");
         return new ArrayList<>(categories); 
     }
@@ -76,6 +77,10 @@ public class Utils {
             }
         }
         return ++idCounter;
+    }
+
+    static public void addNewUser(User users){
+        allUsers.add(users);
     }
 
 }

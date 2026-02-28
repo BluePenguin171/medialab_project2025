@@ -1,5 +1,10 @@
 package com.example.app;
 
+import java.io.FileWriter;
+import java.util.ArrayList;
+import java.util.HashMap;
+
+import com.example.app.models.Admin;
 import com.example.app.models.User;
 import com.example.app.screens.LoginForm;
 import com.example.app.screens.MainScreen;
@@ -27,7 +32,7 @@ public class App extends Application {
         Utils.initUtils(jsoncontroller);
 
         revealLoginForm();
-        //closingEvent();
+        closingEvent();
     }
 
 
@@ -46,22 +51,29 @@ public class App extends Application {
         
         stage.show();
     }
-    /*
+
     public void closingEvent(){
         stage.setOnCloseRequest(event -> {
             if(active_user != null){
                 try{
                     if(active_user instanceof Admin){ 
                         Admin admin = (Admin) active_user;
-                        for(User newUser : admin.getNewUsers()){
-                            Utils.allUsers.add(newUser);   
-                        }
-                        if(admin.getNewUsers().size() > 0){
-                            jsoncontroller.saveAllUsers(Utils.allUsers);
+                        if(admin.getNewUsersFlag()){
+                            ArrayList<HashMap<String, Object>> jsonUsers = User.createToJson(Utils.allUsers);
+                            FileWriter userFileWriter = new FileWriter(Utils.USERS_JSON_FILE);
+                            FileWriter passkeyFileWriter = new FileWriter(Utils.PASSKEY_JSON_FILE);
+                            jsoncontroller.writeJsonFile(userFileWriter, jsonUsers,"id","name","username","password","role","categories","watchlist");
+                            jsoncontroller.writeJsonFile(passkeyFileWriter, jsonUsers, "username", "password", "id");
+                            userFileWriter.close();
+                            passkeyFileWriter.close();
                         }
 
-                        if(admin.getNewCategories()){
-                            jsoncontroller.saveAllCategories(Utils.allCategories);
+                        if(admin.getChangedCategoriesFlag()){
+                            FileWriter utilsFileWriter = new FileWriter(Utils.UTILS_JSON_FILE);
+                            HashMap<String, Object> utilsJson = new HashMap<>();
+                            utilsJson.put("categories", Utils.allCategories);
+                            jsoncontroller.writeJsonFile(utilsFileWriter, utilsJson, "categories");
+                            utilsFileWriter.close();
                         }
                     System.out.println("App closed, all changes saved.");
                     } else {
@@ -73,7 +85,7 @@ public class App extends Application {
             }
         });
     }
-    */
+
     public JsonService getJsonController(){
         return jsoncontroller;
     }

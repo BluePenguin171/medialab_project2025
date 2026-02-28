@@ -120,7 +120,8 @@ public class User{
         json.put("username", this.username);
         json.put("password", this.password);
         json.put("role", this.role.toString());
-        json.put("categories", this.Categories);
+        if(this.role == ROLES.ADMIN) json.put("categories", new ArrayList<>());
+        else json.put("categories", this.Categories);
         ArrayList<HashMap<String, Object>> watchlistJson = new ArrayList<>();
         for(TextFilePair pair : watchlist){
             HashMap<String, Object> pairJson = new HashMap<>();
@@ -150,4 +151,11 @@ public class User{
         throw new IllegalArgumentException("Invalid role in JSON: " + roleStr);
     }
 
+    static public ArrayList<HashMap<String, Object>> createToJson(ArrayList<User> users){
+        ArrayList<HashMap<String, Object>> jsonList = new ArrayList<>();
+        for(User user : users){
+            jsonList.add(user.toJson());
+        }
+        return jsonList;
+    }
 }

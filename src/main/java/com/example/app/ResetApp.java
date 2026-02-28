@@ -71,7 +71,7 @@ public class ResetApp {
 
     static private void createInitialJsonFiles() throws Exception{
         Admin DEFAULT_ADMIN = new Admin(Utils.DEFAULT_ADMIN_FIRST_NAME,Utils.DEFAULT_ADMIN_LAST_NAME,Utils.DEFAULT_ADMIN_USERNAME,Utils.DEFAULT_ADMIN_PASSWORD,1,new ArrayList<>());
-        List<HashMap<String,Object>> DEFAULT_ADMIN_WRAPPER = new ArrayList<HashMap<String,Object>>();
+        ArrayList<HashMap<String,Object>> DEFAULT_ADMIN_WRAPPER = new ArrayList<HashMap<String,Object>>();
         DEFAULT_ADMIN_WRAPPER.add(DEFAULT_ADMIN.toJson());  //The users.json file should be an array of users 
         //writing the Json Object to the File
         HashMap<String, Object> DEFAULT_UTILS = new HashMap<>();
