@@ -9,14 +9,27 @@ import com.example.app.models.Admin;
 import com.example.app.models.User;
 import com.example.app.models.Writer;
 import com.example.app.screens.MainScreen;
+import com.example.app.models.TextFile;
 
+import javafx.application.Platform;
+import javafx.beans.value.ChangeListener;
 import javafx.collections.ObservableList;
+import javafx.geometry.Insets;
+import javafx.scene.Node;
 import javafx.scene.control.Alert;
+import javafx.scene.control.ButtonBar;
+import javafx.scene.control.ButtonType;
+import javafx.scene.control.ComboBox;
+import javafx.scene.control.Dialog;
+import javafx.scene.control.Label;
 import javafx.scene.control.ListCell;
+import javafx.scene.control.TextArea;
+import javafx.scene.control.TextField;
 import javafx.scene.control.TextInputDialog;
 import javafx.scene.control.Toggle;
 import javafx.scene.control.ToggleButton;
 import javafx.scene.input.MouseEvent;
+import javafx.scene.layout.GridPane;
 
 
 public class MainController {
@@ -41,8 +54,8 @@ public class MainController {
                     alert.showAndWait();
                     return;
                 }
-                if(!main.getAddUserActive()){
-                    main.setAddUserActive();
+                if(!main.getActionActiveFlag()){
+                    main.setActionActiveFlage();
                     main.createUserForm();
                     formLogic();
                 }
@@ -51,6 +64,55 @@ public class MainController {
 
         main.getCategories().setOnAction(
             (e) -> CategoryLogic()
+        );
+
+        main.getNewFileIcon().setOnMouseClicked(
+            (e)->{
+                if(main.getUser().getCategories().size() == 0){ //only "All" category exists
+                    Alert alert = new Alert(Alert.AlertType.INFORMATION);
+                    alert.setTitle("Message");
+                    alert.setHeaderText("Error");
+                    alert.setContentText("Please create a category before creating a file!");
+                    alert.showAndWait();
+                    return;
+                }
+
+                if(!main.getActionActiveFlag()){
+                    main.setActionActiveFlage();
+                    TextFile newFile = createFileDialog();
+                    main.textFileArea(newFile);
+                } 
+            }
+        );
+
+        main.getGoBack().setOnAction(
+            (e) -> {
+                main.setActionActiveFlage();
+                
+                Utils.decrementTextFileID(); //revert text file ID
+                
+                main.setActiveFiletoNull();
+                main.returnToMainArea();
+            }
+        );
+
+        main.getSave().setOnAction(
+            (e) -> {
+                main.setActionActiveFlage();
+                
+                TextFile activeFile = main.getActiveFile();
+                TextArea textArea = main.getTextArea();
+                String content = textArea.getText();
+                activeFile.saveContent(content);
+                Utils.allTextFiles.add(activeFile); //add to global list (also updates version)
+                
+                Writer writer = (Writer) main.getUser();
+                writer.setHasNewFile(); //set new file flag for writer
+                
+                main.setActiveFiletoNull();
+                main.returnToMainArea();
+
+            }
         );
 
         
@@ -111,11 +173,11 @@ public class MainController {
         else {
            System.out.println("The form is valid");
            main.returnToMainArea();
-           main.setAddUserActive();
+           main.setActionActiveFlage();
            Admin admin = (Admin) main.getUser();
-           if(role.equals("Admin")) Utils.addNewUser(new Admin(first, last, username, password, Utils.generateID(), selectedCategories));
-           else if(role.equals("Writer")) Utils.addNewUser(new Writer(first,last, username, password, Utils.generateID(), selectedCategories));
-           else Utils.addNewUser(new User(first, last, username, password, Utils.generateID(), selectedCategories)); 
+           if(role.equals("Admin")) Utils.addNewUser(new Admin(first, last, username, password, Utils.generateUserID(), selectedCategories));
+           else if(role.equals("Writer")) Utils.addNewUser(new Writer(first,last, username, password, Utils.generateUserID(), selectedCategories));
+           else Utils.addNewUser(new User(first, last, username, password, Utils.generateUserID(), selectedCategories)); 
            
            admin.setNewUsersFlag();
            //clear form fields
@@ -165,5 +227,73 @@ public class MainController {
             //TODO : filter content by category
         }
             
+    }
+
+    private TextFile createFileDialog(){
+        Dialog<TextFile> dialog = new Dialog<>();
+        dialog.setTitle("Create File");
+        dialog.setHeaderText("Create a new file");
+
+        ButtonType createButtonType = new ButtonType("New", ButtonBar.ButtonData.OK_DONE);
+        dialog.getDialogPane().getButtonTypes().addAll(createButtonType, ButtonType.CANCEL);
+
+        TextField nameField = new TextField();
+        nameField.setPromptText("Name");
+
+
+        ComboBox<String> categoryBox = new ComboBox<>();
+        for(String cat : main.getUser().getCategories()){
+            categoryBox.getItems().add(cat);
+        }
+        categoryBox.setPromptText("Category");
+        categoryBox.setEditable(false);
+
+        GridPane grid = new GridPane();
+        grid.setHgap(10);
+        grid.setVgap(10);
+        grid.setPadding(new Insets(20, 150, 10, 10));
+
+        grid.add(new Label("Name:"), 0, 0);
+        grid.add(nameField, 1, 0);
+        grid.add(new Label("Category:"), 0, 1);
+        grid.add(categoryBox, 1, 1);
+
+        dialog.getDialogPane().setContent(grid);
+        // Disable Create until valid
+        Node createButton = dialog.getDialogPane()
+                .lookupButton(createButtonType);
+        createButton.setDisable(true);
+
+        // Re-check whenever name OR category changes
+        ChangeListener<String> validator = (obs, oldVal, newVal) ->
+                createButton.setDisable(!isFileFormValid(nameField, categoryBox));
+
+        nameField.textProperty().addListener(validator);
+        categoryBox.valueProperty().addListener((obs, oldVal, newVal) ->
+            createButton.setDisable(!isFileFormValid(nameField, categoryBox))
+        );
+
+        // Focus name field
+        Platform.runLater(nameField::requestFocus);
+        
+        dialog.setResultConverter(button -> {
+            if (button == createButtonType) {
+                return new TextFile(
+                        Utils.generateTextFileID(),
+                        nameField.getText().trim(),
+                        main.getUser().getName(),
+                        categoryBox.getValue(),
+                        0
+                    );
+                }
+                return null;
+        });
+
+        return dialog.showAndWait().orElse(null);
+    }
+
+    private boolean isFileFormValid(TextField nameField, ComboBox<String> categoryBox) {
+        return !nameField.getText().trim().isEmpty()
+            && (categoryBox.getValue() != null);
     }
 }

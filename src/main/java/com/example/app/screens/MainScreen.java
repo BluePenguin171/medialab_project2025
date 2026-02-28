@@ -2,21 +2,30 @@ package com.example.app.screens;
 
 
 
+import java.util.ArrayList;
+
 import com.example.app.App;
+import com.example.app.Utils;
 import com.example.app.controllers.MainController;
+import com.example.app.models.TextFile;
 import com.example.app.models.User;
 
+import javafx.application.Platform;
 import javafx.geometry.HPos;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
+import javafx.scene.Node;
 import javafx.scene.control.Button;
+import javafx.scene.control.ButtonBar;
+import javafx.scene.control.ButtonType;
 import javafx.scene.control.ComboBox;
+import javafx.scene.control.Dialog;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
 import javafx.scene.control.RadioButton;
 import javafx.scene.control.SelectionMode;
+import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
-import javafx.scene.control.Toggle;
 import javafx.scene.control.ToggleGroup;
 import javafx.scene.image.ImageView;
 import javafx.scene.image.Image;
@@ -25,21 +34,32 @@ import javafx.scene.layout.BackgroundFill;
 import javafx.scene.layout.CornerRadii;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
-import javafx.scene.layout.Pane;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
+import javafx.scene.text.Text;
 
 
 public class MainScreen {
     //Main Screen fields
     private App app;
     private User user;
+    private boolean isActionActive = false;  //flage to check the state of the addUserButton
+    private TextFile activeFile;
+    private TextArea textArea;
+
     private ImageView search_icon = new ImageView(
         new Image(
             getClass().getResourceAsStream("/assets/search_icon.png"),
+            0,32,true,false
+        )
+    );
+
+    private ImageView new_file_icon = new ImageView(
+        new Image(
+            getClass().getResourceAsStream("/assets/new_file_icon.png"),
             0,32,true,false
         )
     );
@@ -55,11 +75,9 @@ public class MainScreen {
         )
     ); 
 
-    private boolean addUserActive = false;  //flage to check the state of the addUserButton
 
     private HBox toolbar = new HBox(10);
 
-    private Pane canvas = new Pane();
     private StackPane main_area = new StackPane();
     private VBox work_area = new VBox();
     private StackPane work_area_wrapper = new StackPane();
@@ -88,6 +106,10 @@ public class MainScreen {
     private ListView<String> categoriesList;
     private Button submit = new Button("submit");
 
+    //All purpose buttons
+    private Button goBack = new Button("Go Back");
+    private Button save = new Button("Save");
+
 
     public MainScreen(App app,User user){
         this.app = app;
@@ -108,8 +130,7 @@ public class MainScreen {
          createToolbar();
 
         //main screen setup
-        canvas.setStyle("-fx-background-color: black;");
-        main_area.getChildren().add(canvas);
+        main_area.getChildren().add(createFileViewer());
         main_area.setStyle("-fx-border-color: gray; -fx-border-width: 1px;");
 
         
@@ -162,7 +183,7 @@ public class MainScreen {
             "-fx-background-radius: 100em;" 
         );
 
-        //categories setup TODO : add categories
+        categories.getItems().add("All");
         for(String category : user.getCategories()){
             categories.getItems().add(category);
         }
@@ -178,10 +199,16 @@ public class MainScreen {
             search_icon,
             search_bar,
             categories,
-            new Region() {{ setPrefWidth(180); }}, 
-            new Label("Add to Watch List"),
-            add_user_icon
+            new Region() {{ setPrefWidth(150); }}, 
+            new Label("Add to Watch List")
         );
+
+        if(user.getRole().equals("Admin")){
+            toolbar.getChildren().add(add_user_icon);
+        }
+
+        toolbar.getChildren().add(new_file_icon);
+
         toolbar.setPadding(new Insets(15, 10, 15, 10));
         toolbar.setAlignment(Pos.CENTER_LEFT);
         toolbar.setStyle("-fx-border-color: gray; -fx-border-width: 1px;");
@@ -244,12 +271,37 @@ public class MainScreen {
 
     public void returnToMainArea(){
         main_area.getChildren().clear();
-        main_area.getChildren().add(canvas);
+        main_area.getChildren().add(createFileViewer());
+    }
+
+    public void textFileArea(TextFile file){
+        activeFile = file;
+        main_area.getChildren().clear();
+        textArea = new TextArea();
+        VBox area = new VBox(5);
+        Label title = new Label(file.getTitle() + " By " + file.getAuthor());
+
+        HBox buttonRow = new HBox();
+        Region spacer = new Region();
+        HBox.setHgrow(spacer, Priority.ALWAYS);
+        buttonRow.setPadding(new Insets(5,10,10,10));
+        buttonRow.getChildren().addAll(goBack, spacer,save);
+
+
+        area.getChildren().addAll(title, textArea, buttonRow);
+
+        VBox.setVgrow(textArea, Priority.ALWAYS);
+        area.setAlignment(Pos.CENTER);
+        main_area.getChildren().add(area);
     }
 
     //Setters
-    public void setAddUserActive(){
-        addUserActive = !addUserActive;
+    public void setActionActiveFlage(){
+        isActionActive= !isActionActive;
+    }  
+
+    public void setActiveFiletoNull(){
+        activeFile = null;
     }
 
     //Getters
@@ -261,8 +313,12 @@ public class MainScreen {
         return add_user_icon;
     }
 
-    public boolean getAddUserActive(){
-        return addUserActive;
+    public ImageView getNewFileIcon(){
+        return new_file_icon;
+    }
+
+    public boolean getActionActiveFlag(){
+        return isActionActive;
     }
 
     public TextField getFirstName() {
@@ -297,7 +353,113 @@ public class MainScreen {
         return categories;
     }
 
+    public Button getGoBack() {
+        return goBack;
+    }
+
+    public Button getSave() {
+        return save;
+    }
+
     public User getUser() {
         return user;
+    }
+
+    public TextFile getActiveFile() {
+        return activeFile;
+    }
+
+    public TextArea getTextArea() {
+        return textArea;
+    }
+
+    private Node createFileViewer(){
+        if(Utils.allTextFiles.isEmpty()){
+            Label emptyLabel = new Label("There are no files to display.");
+            emptyLabel.setStyle("-fx-text-fill: gray; -fx-font-size: 14px;");
+            return emptyLabel;
+        }
+        //List View to Display files 
+        HBox header = createFileViewerRow("Title","Author","Category","Last Modified","Version");
+        header.setPadding(new Insets(0,10,0,10));
+
+        ListView<HBox> fileList = new ListView<>();
+        for(TextFile file : TextFile.filterBasedOnCategory(Utils.allTextFiles, user.getCategories())){
+            HBox row = createFileViewerRow(file.getTitle(),file.getAuthor(),file.getCategory(),file.getLastModified(), "ver" + String.valueOf(file.getVersion()));
+            fileList.getItems().add(row);
+        }
+
+        VBox mainScreenFileViewer = new VBox(5);
+        mainScreenFileViewer.getChildren().addAll(header, fileList);
+        mainScreenFileViewer.setAlignment(Pos.TOP_LEFT);
+        VBox.setVgrow(mainScreenFileViewer, Priority.ALWAYS);
+
+        return mainScreenFileViewer;
+        
+
+    }
+
+    private HBox createFileViewerRow(String title,String author, String category, String lastModified, String version){
+        HBox row = new HBox();
+        ArrayList<Label> labelRow = createFileViewerLabelList(title,author,category,lastModified,version);
+        int N = labelRow.size() - 1;
+        for (int i =0; i<N; i++){
+            Label label = labelRow.get(i);
+            row.getChildren().add(label);
+            Region region = new Region();
+            row.getChildren().add(region);
+            HBox.setHgrow(region, Priority.ALWAYS);
+        }
+        row.getChildren().add(labelRow.get(N)); //Avoid having a region in the end
+        return row;
+    }
+
+    private ArrayList<Label> createFileViewerLabelList(String title, String author, String category, String lastModified, String version){
+        ArrayList<Label> row = new ArrayList<>();
+        row.add(new Label(title));
+        row.add(new Label(author));
+        row.add(new Label(category));
+        row.add(new Label(lastModified));
+        row.add(new Label(version));
+        for(Label label : row){
+            label.setAlignment(Pos.CENTER_LEFT);
+        }
+        return row;
+    }
+
+    public Dialog<String> createFileDialog(){
+        Dialog<String> dialog = new Dialog<>();
+        dialog.setTitle("Create File");
+        dialog.setHeaderText("Create a new file");
+
+        ButtonType createButtonType = new ButtonType("New", ButtonBar.ButtonData.OK_DONE);
+        dialog.getDialogPane().getButtonTypes().addAll(createButtonType, ButtonType.CANCEL);
+
+        TextField nameField = new TextField();
+        nameField.setPromptText("Name");
+
+        GridPane grid = new GridPane();
+        grid.setHgap(10);
+        grid.setVgap(10);
+        grid.setPadding(new Insets(20, 150, 10, 10));
+
+        grid.add(new Label("Name:"), 0, 0);
+        grid.add(nameField, 1, 0);
+        grid.add(new Label("Category:"), 0, 1);
+        grid.add(categories, 1, 1);
+
+        dialog.getDialogPane().setContent(grid);
+        // Disable Create until valid
+        Node createButton = dialog.getDialogPane()
+                .lookupButton(createButtonType);
+        createButton.setDisable(true);
+
+        nameField.textProperty().addListener((obs, o, n) ->
+                createButton.setDisable(n.trim().isEmpty())
+        );
+
+        // Focus name field
+        Platform.runLater(nameField::requestFocus);
+        return dialog;
     }
 }

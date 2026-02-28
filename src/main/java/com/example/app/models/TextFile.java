@@ -1,6 +1,8 @@
 package com.example.app.models;
 import java.io.FileReader;
 import java.io.FileWriter;
+import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 
@@ -13,13 +15,14 @@ public final class TextFile{
     private int version;
     private String category;
     private String content = null;
+    private LocalDate lastModified;
 
-    public TextFile(int id, String title, String author, String category,int version) throws IllegalArgumentException{
+    public TextFile(int id, String title, String author, String category,int version, LocalDate lastModified) throws IllegalArgumentException{
         this.id = id;
         this.title = title;
         this.author = author;
         this.version = version;
-
+        this.lastModified = lastModified;
         //check if category is valid
         for(String cat : Utils.allCategories){
             if(cat.equals(category)){
@@ -29,6 +32,10 @@ public final class TextFile{
         }
 
         throw new IllegalArgumentException("Invalid category: " + category);
+    }
+
+    public TextFile(int id, String title, String author, String category,int version) throws IllegalArgumentException{
+        this(id, title, author, category, version, null);
     }
 
     public String getTitle() {
@@ -86,6 +93,10 @@ public final class TextFile{
         
     }
 
+    public String getLastModified() {
+        return lastModified != null ? lastModified.toString() : "N/A";
+    }
+
     public void saveContent(String newContent) {
         incrementVersion();
         try(
@@ -94,10 +105,12 @@ public final class TextFile{
         {
             fileWriter.write(newContent);
             content = newContent; // Update the content in memory
+            this.lastModified = LocalDate.now(); // Update the last modified date
         } catch (Exception e) {
             throw new RuntimeException("Error writing file: " + e.getMessage());
         }
     }
+
 
     public HashMap<String, Object> toJson(){
         LinkedHashMap<String, Object> json = new LinkedHashMap<>();
@@ -109,6 +122,8 @@ public final class TextFile{
         return json;
     }
     
+
+
     static public TextFile createFromJson(HashMap<String, Object> json){
         int id = (int) json.get("id");
         String title = (String) json.get("title");
@@ -118,5 +133,22 @@ public final class TextFile{
         return new TextFile(id,title, author, category, version);
     }
 
-    
+    static public ArrayList<HashMap<String, Object>> createToJson(ArrayList<TextFile> files){
+        ArrayList<HashMap<String, Object>> jsonList = new ArrayList<>();
+        for(TextFile file : files){
+            jsonList.add(file.toJson());
+        }
+        return jsonList;
+    }
+
+    static public ArrayList<TextFile> filterBasedOnCategory(ArrayList<TextFile> files, ArrayList<String> categories){
+        ArrayList<TextFile> filtered = new ArrayList<>();
+        for(TextFile file : files){
+            if(categories.contains(file.getCategory())){
+                filtered.add(file);
+            }
+        }
+        return filtered;
+    }
 }
+

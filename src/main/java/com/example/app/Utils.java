@@ -4,6 +4,7 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
 
+import com.example.app.models.TextFile;
 import com.example.app.models.User;
 import com.example.app.services.JsonService;
 
@@ -13,16 +14,9 @@ public class Utils {
 
     static public ArrayList<String> allCategories; 
     static public ArrayList<User> allUsers;
-    static private int idCounter;
-
-    static public final File [] MANDATORY_FILES = {
-            new File("src/main/medialab"),
-            new File("src/main/medialab/JsonFiles"),
-            new File("src/main/medialab/TextFiles"),
-            new File("src/main/medialab/JsonFiles/passkey.json"),
-            new File("src/main/medialab/JsonFiles/users.json"),
-            new File("src/main/medialab/JsonFiles/utils.json")
-    };
+    static public ArrayList<TextFile> allTextFiles;
+    static private int UseridCounter;
+    static private int TextFileIdCounter;
 
     static public final String DEFAULT_ADMIN_FIRST_NAME = "Bob";
     static public final String DEFAULT_ADMIN_LAST_NAME = "Adminakis";
@@ -32,13 +26,25 @@ public class Utils {
     static public final String USERS_JSON_FILE = "src/main/medialab/JsonFiles/users.json";
     static public final String PASSKEY_JSON_FILE = "src/main/medialab/JsonFiles/passkey.json";
     static public final String UTILS_JSON_FILE = "src/main/medialab/JsonFiles/utils.json";
+    static public final String TEXT_JSON_FILE = "src/main/medialab/JsonFiles/textfiles.json";
 
+
+    static public final File [] MANDATORY_FILES = {
+            new File("src/main/medialab"),
+            new File("src/main/medialab/JsonFiles"),
+            new File("src/main/medialab/TextFiles"),
+            new File(PASSKEY_JSON_FILE),
+            new File(USERS_JSON_FILE),
+            new File(TEXT_JSON_FILE),
+            new File(UTILS_JSON_FILE)
+    };
 
     static public void initUtils(JsonService jsonService){
         getAllCategories(jsonService);
     }
 
     static public User getUserByID(JsonService jsonService, int id){
+        getAllTextFiles(jsonService);
         getAllUsers(jsonService);   //initiallize only if the user provide correct credentials
         for(User user : allUsers){
             if(user.getId() == id) return user;
@@ -64,19 +70,42 @@ public class Utils {
         }
     }
 
+    static private void getAllTextFiles(JsonService jsonService){
+        try{
+            allTextFiles = jsonService.readJsonFileList(TEXT_JSON_FILE, TextFile::createFromJson);
+        } catch (Exception e){
+            System.out.println("Error fetching text files: " + e.getMessage());
+            System.exit(1);
+        }
+    }
+
     static private ArrayList<String> createFromJson(HashMap<String, Object> json){
         @SuppressWarnings("unchecked")
         ArrayList<String> categories = (ArrayList<String>) json.get("categories");
         return new ArrayList<>(categories); 
     }
 
-    static public int generateID(){
-        if(idCounter == 0){
+    static public int generateUserID(){
+        if(UseridCounter == 0){
             for(User user : allUsers){
-                if(user.getId() > idCounter) idCounter = user.getId();
+                if(user.getId() > UseridCounter) UseridCounter = user.getId();
             }
         }
-        return ++idCounter;
+        return ++UseridCounter;
+    }
+
+    static public int generateTextFileID(){
+        if(TextFileIdCounter == 0){
+            for(TextFile file : allTextFiles){
+                if(file.getId() > TextFileIdCounter) TextFileIdCounter = file.getId();
+            }
+        }
+        return ++TextFileIdCounter;
+    }
+
+    //In case the text file eventually wont created 
+    static public void decrementTextFileID(){
+        TextFileIdCounter--;
     }
 
     static public void addNewUser(User users){
@@ -84,19 +113,3 @@ public class Utils {
     }
 
 }
-
-/*
-  static public User createFromJson(HashMap<String, Object> json){
-        int id = (int) json.get("id");
-        String name = (String) json.get("name");
-        String username = (String) json.get("username");
-        String password = (String) json.get("password");
-        String roleStr = (String) json.get("role");
-        ROLES role = ROLES.valueOf(roleStr.toUpperCase());
-        ArrayList<String> categories = (ArrayList<String>) json.get("categories");
-        ArrayList<TextFilePair> watchlist = (ArrayList<TextFilePair>) json.get("watchlist");
-        User user = new User(name, username, password, id, categories, watchlist);
-        user.role = role; 
-        return user;
-    }
-*/

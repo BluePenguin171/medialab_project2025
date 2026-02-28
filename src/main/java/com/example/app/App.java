@@ -5,7 +5,9 @@ import java.util.ArrayList;
 import java.util.HashMap;
 
 import com.example.app.models.Admin;
+import com.example.app.models.TextFile;
 import com.example.app.models.User;
+import com.example.app.models.Writer;
 import com.example.app.screens.LoginForm;
 import com.example.app.screens.MainScreen;
 import com.example.app.services.JsonService;
@@ -56,6 +58,16 @@ public class App extends Application {
         stage.setOnCloseRequest(event -> {
             if(active_user != null){
                 try{
+                    if(active_user instanceof Writer){
+                        Writer writer = (Writer) active_user;
+                        if(writer.hasNewFile()){
+                            ArrayList<HashMap<String, Object>> jsonFiles = TextFile.createToJson(Utils.allTextFiles);
+                            FileWriter fileWriter = new FileWriter(Utils.TEXT_JSON_FILE);
+                            jsoncontroller.writeJsonFile(fileWriter, jsonFiles,"id","title","author","category","version","lastModified");
+                            fileWriter.close();
+                        }
+                    }
+
                     if(active_user instanceof Admin){ 
                         Admin admin = (Admin) active_user;
                         if(admin.getNewUsersFlag()){

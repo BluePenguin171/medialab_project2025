@@ -4,7 +4,6 @@ import java.io.File;
 import java.io.FileWriter;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Optional;
 
 import com.example.app.models.Admin;
@@ -24,6 +23,7 @@ public class ResetApp {
         for(File f : Utils.MANDATORY_FILES){
             if(!f.exists()){
                 init_flag = true;
+                break;
             } 
         }
 
@@ -76,16 +76,19 @@ public class ResetApp {
         //writing the Json Object to the File
         HashMap<String, Object> DEFAULT_UTILS = new HashMap<>();
         DEFAULT_UTILS.put("categories", new ArrayList<String>());
+        ArrayList<HashMap<String, Object>> DEFAULT_TEXT_FILES = new ArrayList<>();
         
         try(
             FileWriter passkeyfile = new FileWriter(Utils.PASSKEY_JSON_FILE);
             FileWriter usersfile= new FileWriter(Utils.USERS_JSON_FILE);
             FileWriter categoriesfile = new FileWriter(Utils.UTILS_JSON_FILE);
+            FileWriter textfile = new FileWriter(Utils.TEXT_JSON_FILE);
         )
         {
             jsonController.writeJsonFile(passkeyfile, DEFAULT_ADMIN_WRAPPER, "username","password","id");
             jsonController.writeJsonFile(usersfile,DEFAULT_ADMIN_WRAPPER, "id","name","username","password","role","categories","watchlist");
             jsonController.writeJsonFile(categoriesfile, DEFAULT_UTILS, "categories"); 
+            jsonController.writeJsonFile(textfile, DEFAULT_TEXT_FILES);
         } catch (Exception e){
             throw e;
         }
