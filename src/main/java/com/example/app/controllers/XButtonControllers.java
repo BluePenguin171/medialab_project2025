@@ -59,6 +59,7 @@ public class XButtonControllers implements Callback<TableColumn<TextFile, Void>,
                     writer.removeFromWatchlist(file.getId()); 
                     TextFile.deleteFile(file);
                     Utils.allTextFiles.remove(file);
+                    main.setViewCategories(writer.getCategories());
                     main.returnToMainArea();    //update Table
                 });
             }
@@ -69,6 +70,10 @@ public class XButtonControllers implements Callback<TableColumn<TextFile, Void>,
                 if (empty) {
                     setGraphic(null);
                 } else {
+                    if(!main.getUser().getRole().equals("Admin") && !(main.getUser().getRole().equals("Writer") && main.getUser().getName().equals(getTableView().getItems().get(getIndex()).getAuthor()))){
+                        setGraphic(null);
+                        return;
+                    }
                     setGraphic(container); // ✅ set container, not icon
                 }
             }

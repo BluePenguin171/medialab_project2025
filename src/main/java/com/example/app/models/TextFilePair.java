@@ -4,7 +4,7 @@ import java.util.HashMap;
 
 public class TextFilePair{
     public final int fileId;
-    public final int version;
+    public int version;
 
     public TextFilePair(int fileId, int version){
         this.fileId = fileId;

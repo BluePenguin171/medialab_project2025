@@ -4,9 +4,14 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
 
+import javax.json.Json;
+
 import com.example.app.models.TextFile;
+import com.example.app.models.TextFilePair;
 import com.example.app.models.User;
 import com.example.app.services.JsonService;
+
+import javafx.scene.text.Text;
 
 public class Utils {
     private Utils() {}; 
@@ -41,6 +46,7 @@ public class Utils {
 
     static public void initUtils(JsonService jsonService){
         getAllCategories(jsonService);
+        getTextFileID(jsonService);
     }
 
     static public User getUserByID(JsonService jsonService, int id){
@@ -79,10 +85,23 @@ public class Utils {
         }
     }
 
+    static public void getTextFileID(JsonService jsonService){
+        try{
+            TextFileIdCounter = jsonService.readJsonFile(UTILS_JSON_FILE, Utils::createTextFileIdFromJson, "textFileIdCounter");
+        } catch (Exception e){
+            System.out.println("Error fetching text file ID: " + e.getMessage());
+            System.exit(1);
+        }
+    }
+
     static private ArrayList<String> createFromJson(HashMap<String, Object> json){
         @SuppressWarnings("unchecked")
         ArrayList<String> categories = (ArrayList<String>) json.get("categories");
         return new ArrayList<>(categories); 
+    }
+
+    static private int createTextFileIdFromJson(HashMap<String, Object> json){
+        return (int) json.get("textFileIdCounter");
     }
 
     static public int generateUserID(){
@@ -95,12 +114,11 @@ public class Utils {
     }
 
     static public int generateTextFileID(){
-        if(TextFileIdCounter == 0){
-            for(TextFile file : allTextFiles){
-                if(file.getId() > TextFileIdCounter) TextFileIdCounter = file.getId();
-            }
-        }
         return ++TextFileIdCounter;
+    }
+
+    static public int getCurrentTextFileID(){
+        return TextFileIdCounter;
     }
 
     //In case the text file eventually wont created 
@@ -110,6 +128,31 @@ public class Utils {
 
     static public void addNewUser(User users){
         allUsers.add(users);
+    }
+
+    static public ArrayList<String> checkForUpdates(User user){
+        ArrayList<String> news = new ArrayList<>();
+        ArrayList<TextFilePair> watchlist = new ArrayList<>(user.getWatchlist());
+        for(TextFilePair pair : watchlist){
+            boolean found = false;
+            for(TextFile file : allTextFiles){
+                if(file.getId() == pair.fileId){
+                    if(file.getVersion() > pair.version){
+                        news.add("The file " + file.getTitle() + " has a new version!");
+                        user.updateWatchlistVersion(file.getId(), file.getVersion());
+                    }
+                    
+                    found = true;
+                    break;
+                    
+                }
+            }
+            if(!found) {
+                    news.add("The file with ID " + pair.fileId + " that you were watching has been deleted!");
+                    user.removeFromWatchlist(pair.fileId);
+            }
+        }
+        return news;
     }
 
 }

@@ -23,11 +23,14 @@ import javafx.scene.control.ComboBox;
 import javafx.scene.control.Dialog;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListCell;
+import javafx.scene.control.TableRow;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
 import javafx.scene.control.TextInputDialog;
 import javafx.scene.control.Toggle;
 import javafx.scene.control.ToggleButton;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.GridPane;
 
@@ -85,9 +88,13 @@ public class MainController {
                         return;
                     }
                     main.textFileArea(newFile);
+                    
+                    textAreaController();
                 } 
             }
         );
+
+
 
         //Go Back Button Controller
         main.getGoBack().setOnAction(
@@ -110,18 +117,159 @@ public class MainController {
                 TextArea textArea = main.getTextArea();
                 String content = textArea.getText();
                 activeFile.saveContent(content);
-                Utils.allTextFiles.add(activeFile); //add to global list (also updates version)
+                if(!Utils.allTextFiles.contains(activeFile)) Utils.allTextFiles.add(activeFile);
                 
+
                 Writer writer = (Writer) main.getUser();
                 writer.setHasNewFile(); //set new file flag for writer
+                writer.updateWatchlistVersion(activeFile.getId(), activeFile.getVersion()); //update watchlist version for the file just edited
                 
+
                 main.setActiveFiletoNull();
+                main.getCategories().setValue("All"); //auto select all categories to see the new file added    
+                main.setViewCategories(writer.getCategories());
                 main.returnToMainArea();
 
             }
         );
 
-        
+
+        //search Bar controller (search based on title or author, if @ is in front of the search term, search based on author, otherwise search based on title)
+        main.getSearchBar().textProperty().addListener(
+            (observable, oldValue, newValue) -> {
+                if(main.getActionActiveFlag()) return;
+
+                //if delete a letter or change a letter, go back based on the category you are looking
+                //else keep narrowing it down
+                if(!newValue.startsWith(oldValue) || newValue.length() <= oldValue.length()){ 
+                    String cat = main.getCategories().getValue();
+                    if(cat == "All") main.setViewCategories(main.getUser().getCategories());
+                    else main.setViewCategories(cat);
+                }
+
+                
+
+                ArrayList<TextFile> searchPool = main.getViewedTextFiles();
+                String term = newValue.trim();
+
+
+                if(term.startsWith("@")){
+                    ArrayList<TextFile> results = new ArrayList<>();
+                    if(term.substring(1).equals("")){   //i am tired, i know its messy but it works
+                        main.setViewTextFiles(searchPool);
+                        main.returnToMainArea();
+                        return;
+                    }
+                    if(TextFile.filterBasedOnAuthor(term.substring(1), searchPool, results)){
+                        main.setViewTextFiles(results);
+                        main.returnToMainArea();
+                    }
+                    return;
+                }
+
+                if(term == ""){ //if term empty, meaning a character has deleted, refresh to search pool (should have changed above)
+                    main.setViewTextFiles(searchPool);
+                    main.returnToMainArea();
+                    return; 
+                } 
+
+                ArrayList<TextFile> results = new ArrayList<>();
+                if(TextFile.filterBasedOnTitle(term, searchPool, results)){
+                    main.setViewTextFiles(results);
+                    main.returnToMainArea();
+                }
+            }
+        );
+
+        //Delete Category Controller
+        main.getDeleteCategory().setOnMouseClicked(
+            (e) -> {
+                deleteCategoryDialgo();
+            }
+        );
+
+        //Delete User Controller
+        main.getDeleteUser().setOnMouseClicked(
+            (e) -> {
+                deleteUserDialog();
+            }
+        );
+
+        //Logout Controller
+        main.getLogoutLabel().setOnMouseClicked(
+            (e) -> {
+                if(!main.getActionActiveFlag()){
+                    try{
+                        app.logout();
+                    } catch (Exception ex){
+                        Alert alert = new Alert(Alert.AlertType.INFORMATION);
+                        alert.setTitle("Message");
+                        alert.setHeaderText("Error");
+                        alert.setContentText("An error occurred while logging out: " + ex.getMessage());
+                        alert.showAndWait();
+                        System.exit(-1);
+                    }
+                }
+                else{
+                    Alert alert = new Alert(Alert.AlertType.INFORMATION);
+                    alert.setTitle("Message");
+                    alert.setHeaderText("Error");
+                    alert.setContentText("Please save or go back from the current file before logging out!");
+                    alert.showAndWait();
+                }
+            }
+        );
+    }
+
+    public void tableController(){
+        //Table Controller (if click on title column, open the file)
+        if(main.getFileTable() != null){
+           
+
+            main.getFileTable().setRowFactory(tv -> {
+                TableRow<TextFile> row = new TableRow<>();
+                row.setOnMouseClicked(e -> {
+                    if (!row.isEmpty()) {
+                        double clickX = e.getSceneX();
+                        if (clickX <= main.getTitleCol().getWidth()) {
+                            TextFile file = row.getItem();
+                            if(!main.getActionActiveFlag()){
+                                main.setActionActiveFlage();
+                                main.textFileArea(file);
+                            } 
+                        } else  if ((clickX > main.getVerionStartPos()) && (clickX < (main.getVerionStartPos() + main.getVersionColumn().getWidth())) && (main.getUser().getRole().equals("Admin") || main.getUser().getRole().equals("Writer"))) {    
+                            TextFile file = row.getItem();
+                            int requestedVersion = dialogToSelectVersion(file);
+                            if(requestedVersion == -1) return; //if user cancels the dialog
+                            if(!main.getActionActiveFlag()){
+                                main.setActionActiveFlage();
+                                main.textFileArea(file, requestedVersion);
+                            }
+                        }
+                    }
+                });
+                return row;
+            });
+        }
+
+    }
+
+    public void textAreaController(){
+        //TextArea Consume Enter Key To paragraph
+        main.getTextArea().addEventFilter(KeyEvent.KEY_PRESSED, event -> {
+            if (event.getCode() == KeyCode.ENTER) {
+                event.consume(); //eat the default Enter
+
+                int caretPos = main.getTextArea().getCaretPosition();
+                if (event.isShiftDown()) {
+                    // Enter → new paragraph (newline + tab)
+                    main.getTextArea().insertText(caretPos, "\n\t");
+                } else {
+                    // Shift + Enter → simple new line
+                    main.getTextArea().insertText(caretPos, "\n");
+                }
+            }
+        });
     }
 
     private void formLogic(){
@@ -200,8 +348,11 @@ public class MainController {
 
     private void CategoryLogic(){
         String selected = main.getCategories().getValue();
-        if(selected.equals("Create Category...")){
-            System.out.println("Create category clicked");
+        if(selected.equals("All")){
+            main.setViewCategories(main.getUser().getCategories());
+            main.returnToMainArea();
+        }
+        else if(selected.equals("Create Category...")){
             TextInputDialog dialog = new TextInputDialog();
             dialog.setTitle("Create Category");
             dialog.setHeaderText("Create a new category");
@@ -218,6 +369,7 @@ public class MainController {
                     admin.setChangedCategoriesFlag();           // inform admin newCategory flag                  
                     admin.getCategories().add(category);          // add to admin categories list so it can be visible
                     Utils.allCategories.add(name);                     // add to global categories list
+                    main.updateRighSideLabels();
                 } else if (exists){
                     Alert alert = new Alert(Alert.AlertType.INFORMATION);
                     alert.setTitle("Message");
@@ -228,9 +380,12 @@ public class MainController {
                 }
             });
             
-        } else {
-            System.out.println("Selected category: " + selected);
-            //TODO : filter content by category
+        } 
+        else{
+            ArrayList<String> selected_cat = new ArrayList<String>();
+            selected_cat.add(selected);
+            main.setViewCategories(selected_cat);
+            main.returnToMainArea();
         }
             
     }
@@ -298,8 +453,172 @@ public class MainController {
         return dialog.showAndWait().orElse(null);
     }
 
+    private void deleteCategoryDialgo(){
+        Dialog<TextFile> dialog = new Dialog<>();
+        dialog.setTitle("Delete Category");
+        dialog.setHeaderText("Delete a category");
+
+        ButtonType createButtonType = new ButtonType("Delete", ButtonBar.ButtonData.OK_DONE);
+        dialog.getDialogPane().getButtonTypes().addAll(createButtonType, ButtonType.CANCEL);
+
+        ComboBox<String> categoryBox = new ComboBox<>();
+        for(String cat : main.getUser().getCategories()){
+            categoryBox.getItems().add(cat);
+        }
+        categoryBox.setPromptText("Category");
+        categoryBox.setEditable(false);
+
+        GridPane grid = new GridPane();
+        grid.setHgap(10);
+        grid.setVgap(10);
+        grid.setPadding(new Insets(20, 150, 10, 10));
+
+
+        grid.add(new Label("Category:"), 0, 0);
+        grid.add(categoryBox, 1, 0);
+
+        dialog.getDialogPane().setContent(grid);
+        // Disable Create until valid
+        Node createButton = dialog.getDialogPane()
+                .lookupButton(createButtonType);
+        createButton.setDisable(true);
+
+
+        categoryBox.valueProperty().addListener((obs, oldVal, newVal) ->
+            createButton.setDisable(!isFileFormValid(categoryBox)) //dummy string because the method checks for empty string but we dont have a name field in this dialog
+        );
+
+        
+        dialog.setResultConverter(button -> {
+            if (button == createButtonType) {
+                String categoryToDelete = categoryBox.getValue();
+                TextFile.cascadeDeleteCategory(categoryToDelete, main.getUser()); //delete category from all text files that have it
+                Admin admin = (Admin) main.getUser();
+                admin.getCategories().remove(categoryToDelete); //remove from admin categories list
+                admin.setChangedCategoriesFlag();
+                admin.setHasNewFile();
+
+                Utils.allCategories.remove(categoryToDelete); //remove from global categories list
+                main.getCategories().getItems().remove(categoryToDelete); //remove from combo box
+                main.getCategories().setValue("All"); //auto select all to refresh the view
+                main.setViewCategories(admin.getCategories()); //refresh view based on remaining categories
+                main.returnToMainArea();
+                return null;
+            }
+            return null;
+        });
+
+        dialog.showAndWait();
+    }
+
+    private void deleteUserDialog(){
+        Dialog<TextFile> dialog = new Dialog<>();
+        dialog.setTitle("Delete User");
+        dialog.setHeaderText("Delete a user");
+
+        ButtonType createButtonType = new ButtonType("Delete", ButtonBar.ButtonData.OK_DONE);
+        dialog.getDialogPane().getButtonTypes().addAll(createButtonType, ButtonType.CANCEL);
+
+        ComboBox<String> UserBox = new ComboBox<>();
+        for(User user : Utils.allUsers){
+            if(user.getId() != main.getUser().getId()) UserBox.getItems().add(user.getName());
+        }
+        UserBox.setPromptText("User");
+        UserBox.setEditable(false);
+
+        GridPane grid = new GridPane();
+        grid.setHgap(10);
+        grid.setVgap(10);
+        grid.setPadding(new Insets(20, 150, 10, 10));
+
+
+        grid.add(new Label("User:"), 0, 0);
+        grid.add(UserBox, 1, 0);
+
+        dialog.getDialogPane().setContent(grid);
+        // Disable Create until valid
+        Node createButton = dialog.getDialogPane()
+                .lookupButton(createButtonType);
+        createButton.setDisable(true);
+
+
+        UserBox.valueProperty().addListener((obs, oldVal, newVal) ->
+            createButton.setDisable(!isFileFormValid(UserBox)) //dummy string because the method checks for empty string but we dont have a name field in this dialog
+        );
+
+        
+        dialog.setResultConverter(button -> {
+            if (button == createButtonType) {
+                String userToDelete = UserBox.getValue();
+                Utils.allUsers.removeIf(user -> user.getName().equals(userToDelete));
+                Admin admin = (Admin) main.getUser();
+                admin.setNewUsersFlag();
+                main.returnToMainArea();
+                return null;
+            }
+            return null;
+        });
+
+        dialog.showAndWait();
+
+    }
+
+    private int dialogToSelectVersion(TextFile file){
+        Dialog<Integer> dialog = new Dialog<>();
+        dialog.setTitle("Select Version");
+        dialog.setHeaderText("Select a version of the file");
+
+        ButtonType selectButtonType = new ButtonType("Select", ButtonBar.ButtonData.OK_DONE);
+        dialog.getDialogPane().getButtonTypes().addAll(selectButtonType, ButtonType.CANCEL);
+
+        ComboBox<String> versionBox = new ComboBox<>();
+        int oldestVersion = main.getUser().getRole().equals("Admin") ? 0 : Math.max(file.getVersion()-3,0);
+        for(int i = file.getVersion(); i > oldestVersion; i--){
+            versionBox.getItems().add("ver " + String.valueOf(i));
+        }
+        versionBox.setPromptText("Version");
+        versionBox.setEditable(false);
+
+        GridPane grid = new GridPane();
+        grid.setHgap(10);
+        grid.setVgap(10);
+        grid.setPadding(new Insets(20, 150, 10, 10));
+
+
+        grid.add(new Label("Version:"), 0, 0);
+        grid.add(versionBox, 1, 0);
+
+        dialog.getDialogPane().setContent(grid);
+        // Disable Create until valid
+        Node createButton = dialog.getDialogPane()
+                .lookupButton(selectButtonType);
+        createButton.setDisable(true);
+
+
+        versionBox.valueProperty().addListener((obs, oldVal, newVal) ->
+            createButton.setDisable(!isFileFormValid(versionBox)) //dummy string because the method checks for empty string but we dont have a name field in this dialog
+        );
+
+        
+        dialog.setResultConverter(button -> {
+            if (button == selectButtonType) {
+                String versionStr = versionBox.getValue();
+                int versionNum = Integer.parseInt(versionStr.split(" ")[1]);
+                return versionNum;
+            }
+            return null;
+        });
+
+        Optional<Integer> result = dialog.showAndWait();  // Capture the result
+        return result.orElse(-1); 
+    }
+
     private boolean isFileFormValid(TextField nameField, ComboBox<String> categoryBox) {
         return !nameField.getText().trim().isEmpty()
             && (categoryBox.getValue() != null);
+    }
+
+    private boolean isFileFormValid(ComboBox<String> categoryBox) {
+        return (categoryBox.getValue() != null);
     }
 }

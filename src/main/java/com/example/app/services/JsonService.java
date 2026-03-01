@@ -46,6 +46,7 @@ public class JsonService{
         ){
             jsonfile.writeObject(jsonData);
         } catch (Exception e) {
+            System.out.println(e.getMessage());
             throw new Exception("FATAL ERROR: Failed to write to file " + filepath);
         }
      }
@@ -109,6 +110,7 @@ public class JsonService{
                         arrayBuilder.add((Integer) item);
                     }
                     else if(item instanceof HashMap){
+                        @SuppressWarnings("unchecked")
                         TextFilePair pair = TextFilePair.createFromJson((HashMap<String, Integer>) item);
                         arrayBuilder.add(Json.createArrayBuilder()
                             .add(pair.fileId)

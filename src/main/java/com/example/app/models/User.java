@@ -119,6 +119,17 @@ public class User{
         watchlist.removeIf(pair -> pair.fileId == fileId);
     }
 
+    public void updateWatchlistVersion(int fileId, int newVersion){
+        watchlistChanged = true;
+        for(TextFilePair pair : watchlist){
+            if(pair.fileId == fileId){
+                pair.version = newVersion;
+                break;
+            }
+        }
+    }
+
+
     public HashMap<String, Object> toJson(){
         LinkedHashMap<String, Object> json = new LinkedHashMap<>();
         json.put("id", this.id);

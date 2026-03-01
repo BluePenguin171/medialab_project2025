@@ -9,7 +9,7 @@ import java.util.LinkedHashMap;
 
 import com.example.app.Utils;
 
-import javafx.scene.text.Text;
+
 
 public final class TextFile{
     private int id;
@@ -100,6 +100,10 @@ public final class TextFile{
         return lastModified != null ? lastModified.toString() : "N/A";
     }
 
+    public boolean isFileExist(){
+        File f = new File(this.getFilePath(this.version));
+        return f.exists();
+    }
     public void saveContent(String newContent) {
         incrementVersion();
         try(
@@ -156,11 +160,63 @@ public final class TextFile{
         return filtered;
     }
 
+    static public ArrayList<TextFile> filterBasedOnCategory(ArrayList<TextFile> files, String cat){
+        ArrayList<TextFile> filtered = new ArrayList<>();
+        for(TextFile file : files){
+            if(cat.equals(file.getCategory())){
+                filtered.add(file);
+            }
+        }
+        return filtered;
+    }
+
+    
+
+    static public boolean filterBasedOnTitle(String target, ArrayList<TextFile> source, ArrayList<TextFile> result){
+        /*
+        explaining this because otherwise wont make sense
+        Returns true if it narrow down the source list 
+        The result should have the files that starts with target
+        */
+        boolean changed = false;
+        for(TextFile f : source){
+            if(f.getTitle().startsWith(target)){
+                result.add(f);
+            }
+            else changed = true;
+        }
+        return changed;
+    }
+
+    static public boolean filterBasedOnAuthor(String target, ArrayList<TextFile> source, ArrayList<TextFile> result){
+        //same as above, but filter based on author
+        boolean changed = false;
+        for(TextFile f : source){
+            if(f.getAuthor().startsWith(target)){
+                result.add(f);
+            }
+            else changed = true;
+        }
+        return changed;
+    }
+
+
     static public void deleteFile(TextFile file){
         for(int i=1; i<=file.getVersion(); i++){
             File f = new File(file.getFilePath(i));
             if(f.exists()) f.delete();
         }
+        Utils.allTextFiles.remove(file);
     }
+
+    static public void cascadeDeleteCategory(String category, User user){
+        for(TextFile file : Utils.allTextFiles){
+            if(file.getCategory().equals(category)){
+                deleteFile(file);
+                user.removeFromWatchlist(file.getId());
+            }
+        }
+    }
+
 }
 

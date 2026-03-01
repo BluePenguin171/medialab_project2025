@@ -76,6 +76,7 @@ public class ResetApp {
         //writing the Json Object to the File
         HashMap<String, Object> DEFAULT_UTILS = new HashMap<>();
         DEFAULT_UTILS.put("categories", new ArrayList<String>());
+        DEFAULT_UTILS.put("textFileIdCounter", 0); 
         ArrayList<HashMap<String, Object>> DEFAULT_TEXT_FILES = new ArrayList<>();
         
         try(
@@ -87,7 +88,7 @@ public class ResetApp {
         {
             jsonController.writeJsonFile(passkeyfile, DEFAULT_ADMIN_WRAPPER, "username","password","id");
             jsonController.writeJsonFile(usersfile,DEFAULT_ADMIN_WRAPPER, "id","name","username","password","role","categories","watchlist");
-            jsonController.writeJsonFile(categoriesfile, DEFAULT_UTILS, "categories"); 
+            jsonController.writeJsonFile(categoriesfile, DEFAULT_UTILS, "categories", "textFileIdCounter"); 
             jsonController.writeJsonFile(textfile, DEFAULT_TEXT_FILES);
         } catch (Exception e){
             throw e;

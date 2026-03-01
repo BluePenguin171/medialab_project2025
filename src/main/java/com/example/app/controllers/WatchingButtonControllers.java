@@ -44,6 +44,7 @@ public class WatchingButtonControllers implements Callback<TableColumn<TextFile,
                     icon.getChildren().setAll(isWatching ? eyeOpen : eyeClose);
                     if (isWatching) main.getUser().addToWatchlist(file.getId(), file.getVersion());
                     else main.getUser().removeFromWatchlist(file.getId());
+                    main.updateRighSideLabels();
                 });
                 icon.getChildren().add(eyeClose);
             }
