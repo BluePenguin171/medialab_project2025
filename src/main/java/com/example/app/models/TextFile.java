@@ -2,6 +2,7 @@ package com.example.app.models;
 import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
+import java.lang.reflect.Array;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -210,7 +211,8 @@ public final class TextFile{
     }
 
     static public void cascadeDeleteCategory(String category, User user){
-        for(TextFile file : Utils.allTextFiles){
+        ArrayList<TextFile> toDelete = new ArrayList<>(Utils.allTextFiles);
+        for(TextFile file : toDelete){
             if(file.getCategory().equals(category)){
                 deleteFile(file);
                 user.removeFromWatchlist(file.getId());

@@ -4,14 +4,13 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
 
-import javax.json.Json;
+
 
 import com.example.app.models.TextFile;
 import com.example.app.models.TextFilePair;
 import com.example.app.models.User;
 import com.example.app.services.JsonService;
 
-import javafx.scene.text.Text;
 
 public class Utils {
     private Utils() {}; 

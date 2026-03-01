@@ -166,6 +166,11 @@ public class User{
         ROLES role = ROLES.valueOf(roleStr.toUpperCase());
         @SuppressWarnings("unchecked")
         ArrayList<String> categories = (ArrayList<String>) json.get("categories");
+        ArrayList<String> validCategories = new ArrayList<>();
+        for(String cat : categories){
+            if(Utils.allCategories.contains(cat)) validCategories.add(cat);
+        }
+        categories = validCategories; //if the category in the JSON file is not in the Utils.allCategories, ignore it
         @SuppressWarnings("unchecked")
         ArrayList<TextFilePair> watchlist = (ArrayList<TextFilePair>) json.get("watchlist");
         if(role == ROLES.ADMIN) return new Admin(name, username, password, id, Utils.allCategories, watchlist);

@@ -545,6 +545,7 @@ public class MainScreen {
     }
 
 
+    @SuppressWarnings("unchecked")
     private Node createFileViewer(){
         if(viewTextFiles.isEmpty()){
             Label emptyLabel = new Label("There are no files to display.");
@@ -609,7 +610,7 @@ public class MainScreen {
         deleteCol.setCellFactory(new XButtonControllers(this));
 
 
-
+        
         fileTable.getColumns().addAll(titleCol, authorCol, categoryCol, modifiedCol, versionCol,watchingCol);
         if(user.getRole().equals("Admin") || user.getRole().equals("Writer")){
             fileTable.getColumns().add(deleteCol);  //add the delete column only for admin and writers
